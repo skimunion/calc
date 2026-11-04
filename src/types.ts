@@ -46,6 +46,7 @@ export interface DaySummary {
   entryCount: number;
   employeeCount: number;
   locationsCount: number;
+  locations: string[];
   entries: WorkEntry[];
 }
 
@@ -56,6 +57,7 @@ export interface EmployeeWeeklySummary {
   totalSquareMeters: number; // Окремий підсумок квадратних метрів
   dayHours: Record<string, number>; // date -> hours
   daySquareMeters: Record<string, number>; // date -> m²
+  dayLocations: Record<string, string[]>; // date -> locations
 }
 
 export interface CategorySummary {

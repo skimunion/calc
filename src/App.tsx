@@ -93,8 +93,8 @@ export default function App() {
 
   // Compute Weekly calculations and aggregates
   const weekSummary = useMemo(() => {
-    return calculateWeekSummary(currentMonday, entries);
-  }, [currentMonday, entries]);
+    return calculateWeekSummary(currentMonday, entries, employees);
+  }, [currentMonday, entries, employees]);
 
   // Existing unique locations across entries
   const existingLocations = useMemo(() => {

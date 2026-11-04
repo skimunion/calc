@@ -274,7 +274,21 @@ export const WeeklyReportView: React.FC<WeeklyReportViewProps> = ({
                       {day.displayDate}
                     </td>
                     <td className="py-2.5 px-4 text-center">
-                      {day.locationsCount > 0 ? day.locationsCount : '—'}
+                      {day.locations && day.locations.length > 0 ? (
+                        <div className="flex flex-wrap items-center justify-center gap-1 max-w-[200px] mx-auto">
+                          {day.locations.map((loc, i) => (
+                            <span
+                              key={i}
+                              title={loc}
+                              className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-500/15 text-sky-300 print:bg-gray-100 print:text-black border border-sky-500/30 print:border-gray-400 truncate max-w-[130px]"
+                            >
+                              {loc}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className="py-2.5 px-4 text-center">
                       {day.employeeCount > 0 ? (
@@ -338,16 +352,41 @@ export const WeeklyReportView: React.FC<WeeklyReportViewProps> = ({
                     const parts = d.date.split('-');
                     const dayNum = parts[2];
                     const monthNum = parts[1];
+                    const dayLocs = d.locations && d.locations.length > 0
+                      ? d.locations
+                      : Array.from(new Set(d.entries.map((e) => e.location?.trim()).filter(Boolean) as string[]));
+
                     return (
                       <th
                         key={d.date}
-                        className="py-2.5 px-2 text-center text-xs whitespace-nowrap border-l border-slate-800/60 print:border-gray-300"
+                        className="py-2.5 px-2 text-center text-xs align-top border-l border-slate-800/60 print:border-gray-300 min-w-[90px]"
                       >
                         <div className="font-bold text-white print:text-black">
                           {d.shortDayName}
                         </div>
                         <div className="text-[10px] font-semibold text-amber-300 print:text-gray-700 mt-0.5">
                           {dayNum}.{monthNum}
+                        </div>
+                        {/* Назва об'єкта / будівельного майданчика там, де день тижня та дата */}
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-800/80 print:border-gray-300">
+                          {dayLocs.length > 0 ? (
+                            <div className="space-y-1">
+                              {dayLocs.map((loc, idx) => (
+                                <div
+                                  key={idx}
+                                  title={`Об'єкт: ${loc}`}
+                                  className="inline-flex items-center justify-center gap-1 w-full px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-950/90 text-sky-300 print:bg-gray-100 print:text-black border border-sky-500/30 print:border-gray-400 break-words leading-tight"
+                                >
+                                  <MapPin className="w-2.5 h-2.5 shrink-0 text-sky-400 print:text-black" />
+                                  <span className="truncate max-w-[85px]">{loc}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-500 print:text-gray-400 font-normal">
+                              —
+                            </span>
+                          )}
                         </div>
                       </th>
                     );
@@ -381,15 +420,33 @@ export const WeeklyReportView: React.FC<WeeklyReportViewProps> = ({
                       {summary.days.map((d) => {
                         const h = emp.dayHours[d.date];
                         const sqm = emp.daySquareMeters[d.date];
+                        const empLocs = emp.dayLocations?.[d.date] || [];
+
                         return (
                           <td
                             key={d.date}
                             className="py-2 px-2 text-center text-xs border-l border-slate-800/60 print:border-gray-300"
                           >
                             {h || sqm ? (
-                              <div>
-                                {h ? <span className="font-bold text-amber-300 print:text-black">{h}г</span> : null}
-                                {sqm ? <div className="text-[10px] text-emerald-400 print:text-gray-600">{sqm}м²</div> : null}
+                              <div className="space-y-0.5">
+                                {h ? (
+                                  <span className="block font-bold text-amber-300 print:text-black">
+                                    {h}г
+                                  </span>
+                                ) : null}
+                                {sqm ? (
+                                  <span className="block text-[10px] text-emerald-400 print:text-gray-700 font-medium">
+                                    {sqm}м²
+                                  </span>
+                                ) : null}
+                                {empLocs.length > 0 && d.locations && d.locations.length > 1 ? (
+                                  <div
+                                    className="text-[9px] text-sky-400/90 print:text-gray-600 truncate max-w-[80px] mx-auto font-medium"
+                                    title={`Об'єкт працівника: ${empLocs.join(', ')}`}
+                                  >
+                                    {empLocs.join(', ')}
+                                  </div>
+                                ) : null}
                               </div>
                             ) : (
                               <span className="text-slate-600 print:text-gray-400">—</span>

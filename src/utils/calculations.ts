@@ -5,7 +5,8 @@ import {
   EmployeeWeeklySummary,
   CategorySummary,
   LocationSummary,
-  WorkCategory
+  WorkCategory,
+  Employee
 } from '../types';
 import {
   getDaysOfWeek,
@@ -67,10 +68,12 @@ export function calculateDaySummary(date: Date, entries: WorkEntry[]): DaySummar
       .filter((name) => name.length > 0)
   );
 
-  const uniqueLocations = new Set(
-    dayEntries
-      .map((e) => (e.location || '').trim())
-      .filter((loc) => loc.length > 0)
+  const uniqueLocationsList = Array.from(
+    new Set(
+      dayEntries
+        .map((e) => (e.location || '').trim())
+        .filter((loc) => loc.length > 0)
+    )
   );
 
   const dayOfWeekIndex = date.getDay(); // 0 is Sun, 1 is Mon, etc.
@@ -87,7 +90,8 @@ export function calculateDaySummary(date: Date, entries: WorkEntry[]): DaySummar
     totalSquareMeters,
     entryCount: dayEntries.length,
     employeeCount: uniqueEmployees.size,
-    locationsCount: uniqueLocations.size,
+    locationsCount: uniqueLocationsList.length,
+    locations: uniqueLocationsList,
     entries: dayEntries.sort((a, b) => b.createdAt - a.createdAt),
   };
 }
@@ -97,7 +101,11 @@ export function calculateDaySummary(date: Date, entries: WorkEntry[]): DaySummar
  * 1. РОЗРАХУНОК ЛЮДИНО-ГОДИН (всього годин за тиждень, табель по працівниках)
  * 2. РОЗРАХУНОК ЗБУДОВАНИХ КВАДРАТНИХ МЕТРІВ (всього м² за тиждень, обсяги робіт по локаціях/категоріях)
  */
-export function calculateWeekSummary(mondayDate: Date, allEntries: WorkEntry[]): WeekSummary {
+export function calculateWeekSummary(
+  mondayDate: Date,
+  allEntries: WorkEntry[],
+  rosterEmployees?: Employee[]
+): WeekSummary {
   const weekDays = getDaysOfWeek(mondayDate);
   const startDateStr = formatDateKey(weekDays[0]);
   const endDateStr = formatDateKey(weekDays[6]);
@@ -130,8 +138,26 @@ export function calculateWeekSummary(mondayDate: Date, allEntries: WorkEntry[]):
       daysWorked: Set<string>;
       dayHours: Record<string, number>;
       daySquareMeters: Record<string, number>;
+      dayLocations: Record<string, string[]>;
     }
   >();
+
+  // Якщо передано активний склад бригади, показуємо їх у табелі навіть до записів
+  if (rosterEmployees && rosterEmployees.length > 0) {
+    rosterEmployees.forEach((emp) => {
+      const name = emp.name.trim();
+      if (!name) return;
+      employeeMap.set(name, {
+        name,
+        totalHours: 0,
+        totalSquareMeters: 0,
+        daysWorked: new Set<string>(),
+        dayHours: {},
+        daySquareMeters: {},
+        dayLocations: {},
+      });
+    });
+  }
 
   weekEntries.forEach((entry) => {
     const key = entry.employeeName.trim();
@@ -145,12 +171,24 @@ export function calculateWeekSummary(mondayDate: Date, allEntries: WorkEntry[]):
         daysWorked: new Set<string>(),
         dayHours: {},
         daySquareMeters: {},
+        dayLocations: {},
       });
     }
 
     const rec = employeeMap.get(key)!;
     const hours = Number(entry.hoursWorked) || 0;
     const sqm = Number(entry.squareMeters) || 0;
+    const loc = (entry.location || '').trim();
+
+    // Запис локації працівника на конкретну дату
+    if (loc) {
+      if (!rec.dayLocations[entry.date]) {
+        rec.dayLocations[entry.date] = [];
+      }
+      if (!rec.dayLocations[entry.date].includes(loc)) {
+        rec.dayLocations[entry.date].push(loc);
+      }
+    }
 
     // Незалежне додавання годин
     if (hours > 0) {
@@ -175,6 +213,7 @@ export function calculateWeekSummary(mondayDate: Date, allEntries: WorkEntry[]):
       totalSquareMeters: rec.totalSquareMeters,
       dayHours: rec.dayHours,
       daySquareMeters: rec.daySquareMeters,
+      dayLocations: rec.dayLocations,
     }))
     .sort((a, b) => b.totalHours - a.totalHours || b.totalSquareMeters - a.totalSquareMeters);
 

@@ -129,4 +129,17 @@ test('calculateWeekSummary виконує два окремих розрахун
   assert.equal(locB?.totalSquareMeters, 0);
   assert.equal(locB?.dayHours['2026-11-03'], 8);
   assert.equal(locB?.percentageOfHours, 50);
+
+  // Перевірка назв об'єктів у днях тижня
+  const mondaySummary = weekSummary.days.find((d) => d.date === '2026-11-02');
+  assert.deepEqual(mondaySummary?.locations, ['ЖК Сонячний']);
+
+  const tuesdaySummary = weekSummary.days.find((d) => d.date === '2026-11-03');
+  assert.deepEqual(tuesdaySummary?.locations, ['Котеджне містечко']);
+
+  // Перевірка прив'язки локації до працівника
+  const empMelnyk = weekSummary.employeeSummaries.find((e) => e.employeeName === 'Олександр Мельник');
+  assert.deepEqual(empMelnyk?.dayLocations['2026-11-02'], ['ЖК Сонячний']);
+  assert.deepEqual(empMelnyk?.dayLocations['2026-11-03'], ['Котеджне містечко']);
 });
+
