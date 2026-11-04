@@ -1,0 +1,8 @@
+{
+  "name": "BuildLog - Work & Man-Hours Calendar",
+  "description": "Weekly construction calendar to track employee work logs, hours worked, and square meters built with automatic weekly man-hour and square meter totals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
